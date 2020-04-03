@@ -9,9 +9,8 @@
 namespace memstorage {
     template<class K,class V>
 
-    // these clasess needs destructors to prevent memory leak
-    // https://stackoverflow.com/questions/34170164/destructor-for-binary-search-tree
-
+    // TODO: add destructors to 'delete' and prevent memory leak 
+    // or maybe just unique_ptr
     class Node {
         public:
             Node(K key, V value) {
@@ -220,10 +219,10 @@ namespace memstorage {
                     void Archive(K key, V value) {
                         int key_size = sizeof(key);
                         int value_size = sizeof(value);
-                        // write key size and value size offsets
+
                         os.write((char*) &key_size, sizeof(int));
                         os.write((char*) &value_size, sizeof(int));
-                        // write actulal key and values
+                        // write actual key and values
                         os.write((char*) &key, sizeof(K));
                         os.write((char*) &value, sizeof(V));
                     }

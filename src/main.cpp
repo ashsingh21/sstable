@@ -1,6 +1,8 @@
 #include "iostream"
 #include <fstream>
 #include <chrono>
+#include <vector>
+#include <iterator>
 
 #include "tree.h"
 
@@ -16,26 +18,41 @@ int main(){
 
     TreeMemTable<int, int> tree{};
     auto start = std::chrono::system_clock::now();
-    for (int i = 0; i < 100000; i++){
+    for (int i = 0; i < 100; i++){
         tree.Insert(i,i);
     }
 
+    int bytestoread = 100 * 4;
+
     memstorage::KeyValueSerializer<TreeMemTable<int,int>, int,int> kv{};
-    kv.Serialize(tree);
+    //kv.Serialize(tree);
     auto end = std::chrono::system_clock::now();
+    
 
     std::chrono::duration<double> elapsed_seconds = end-start;
 
     std::cout << "Time taken: " << elapsed_seconds.count() << " seconds" << "\n";
-    
-    
-    // if (os) {
-    //     tree.Inorder(os);
-    // } else {
-    //     cout << "error while opening file" << std::endl;
-    // }
+
+
+
+    std::ifstream is("table", std::ios::binary);
+    std::string buffer(100*4, 0);
+    is.read(&buffer[0], 100*4);
+
+    std::cout << "String\n" << buffer << "\n";
+
+
+    std::cout << "--------------------------" << "\n";
+
+
+    std::vector<char> data;
+
+    for (int i=0; i< buffer.size(); i+=sizeof(int)) {
+        data.push_back(*(char*) &buffer[i]);
+    }
+
+    for(auto i: data) {
+        cout << i << "\n";
+    }
 
 }
-
-//binary file
-// https://baptiste-wicht.com/posts/2011/06/write-and-read-binary-files-in-c.html
