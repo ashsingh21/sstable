@@ -83,6 +83,9 @@ namespace memstorage {
             TreeMemTable(){
                 _root = nullptr;
             }
+            ~TreeMemTable(){
+                Cleanup(_root);
+            }
             void Insert(K key, V val){
                  _root = _Insert(key, val, _root);   
             }
@@ -109,6 +112,15 @@ namespace memstorage {
 
         private:
             Node<K, V>* _root;
+
+            void Cleanup(Node<K,V>* node) {
+                if (node ==  nullptr) {
+                    return;
+                }
+                Cleanup(node->GetLeftNode());
+                Cleanup(node->GetRightNode());
+                delete node;
+            }
 
             Node<K,V>* _Insert(K key, V val, Node<K,V>* node){
                 if (node == nullptr){
