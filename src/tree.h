@@ -65,14 +65,12 @@ namespace memstorage {
             int GetBalanceFactor(){
                 return GetRightHeight() - GetLeftHeight(); 
             }
-
-
             
         private:
             K _key;
             V _val;
-            Node* _left;
-            Node* _right;
+            Node* _left=nullptr;
+            Node* _right=nullptr;
             int _height;
     };
 
@@ -97,7 +95,7 @@ namespace memstorage {
             }
 
             void Inorder() {
-                _Inorder(_root);
+                //_Inorder(_root);
             }
 
             Node<K,V>* GetRoot(){
