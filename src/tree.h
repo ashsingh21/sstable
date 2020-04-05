@@ -83,6 +83,9 @@ namespace memstorage {
             TreeMemTable(){
                 _root = nullptr;
             }
+            ~TreeMemTable(){
+                Cleanup(_root);
+            }
             void Insert(K key, V val){
                  _root = _Insert(key, val, _root);   
             }
@@ -93,8 +96,8 @@ namespace memstorage {
                 return true;
             }
 
-            void Inorder(std::ofstream& os) {
-                _Inorder(_root, os);
+            void Inorder() {
+                _Inorder(_root);
             }
 
             Node<K,V>* GetRoot(){
@@ -109,6 +112,15 @@ namespace memstorage {
 
         private:
             Node<K, V>* _root;
+
+            void Cleanup(Node<K,V>* node) {
+                if (node ==  nullptr) {
+                    return;
+                }
+                Cleanup(node->GetLeftNode());
+                Cleanup(node->GetRightNode());
+                delete node;
+            }
 
             Node<K,V>* _Insert(K key, V val, Node<K,V>* node){
                 if (node == nullptr){
@@ -216,6 +228,8 @@ namespace memstorage {
                     ~Serializer(){
                         os.close();             
                     }
+                    // probably find more efficient of serializing and 
+                    // deserializing
                     void Archive(K key, V value) {
                         if (!version_appended) {
                             version_appended = true;
@@ -235,8 +249,7 @@ namespace memstorage {
                     bool version_appended=false;
                     int version=1;
             };
-            Serializer sl;
-            
+            Serializer sl;  
     };
 
     template<typename K, typename V>
@@ -323,6 +336,7 @@ namespace memstorage {
                     void read_data() {
                         K key = read_key();
                         V value = read_value();
+                        //std::cout << key << " " << value << "\n";
                         deserialized.push_back(Pair{key, value});
                     }
 
