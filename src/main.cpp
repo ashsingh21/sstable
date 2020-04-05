@@ -21,8 +21,8 @@ int main(){
 
     TreeMemTable<int, int> tree{};
     auto start = std::chrono::system_clock::now();
-    for (int i = 1; i < 1000000; i++){
-        tree.Insert(i,i+1);
+    for (int i = 1; i < 1000; i++){
+        tree.Insert(i,i);
     }
 
     int bytestoread = 100 * 4;
@@ -48,6 +48,13 @@ int main(){
 
     auto pairs = kvd.Deserialize();
     std::cout << "Time taken 1mb Deserialization: " << elapsed_seconds.count() << " seconds" << "\n";
+
+    TreeMemTable<int, int> t{};
+    for (auto& p: pairs) {
+        std::cout << p.key << " " << p.value << "\n";
+    }
+
+    t.Inorder();
 
     int key_size = *(int*) &bytes[0];
     int j = 0 + sizeof(int);

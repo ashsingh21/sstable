@@ -96,8 +96,8 @@ namespace memstorage {
                 return true;
             }
 
-            void Inorder(std::ofstream& os) {
-                _Inorder(_root, os);
+            void Inorder() {
+                _Inorder(_root);
             }
 
             Node<K,V>* GetRoot(){
@@ -228,6 +228,8 @@ namespace memstorage {
                     ~Serializer(){
                         os.close();             
                     }
+                    // probably find more efficient of serializing and 
+                    // deserializing
                     void Archive(K key, V value) {
                         if (!version_appended) {
                             version_appended = true;
@@ -247,8 +249,7 @@ namespace memstorage {
                     bool version_appended=false;
                     int version=1;
             };
-            Serializer sl;
-            
+            Serializer sl;  
     };
 
     template<typename K, typename V>
@@ -335,6 +336,7 @@ namespace memstorage {
                     void read_data() {
                         K key = read_key();
                         V value = read_value();
+                        //std::cout << key << " " << value << "\n";
                         deserialized.push_back(Pair{key, value});
                     }
 
