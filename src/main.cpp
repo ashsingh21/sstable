@@ -21,7 +21,7 @@ int main(){
 
     TreeMemTable<int, int> tree{};
     auto start = std::chrono::system_clock::now();
-    for (int i = 1; i < 1000; i++){
+    for (int i = 1; i < 3; i++){
         tree.Insert(i,i);
     }
 
@@ -36,9 +36,6 @@ int main(){
 
     std::chrono::duration<double> elapsed_seconds = end-start;
 
-    std::cout << "Time taken 1mb Serialization: " << elapsed_seconds.count() << " seconds" << "\n";
-
-
     start = std::chrono::system_clock::now();
     std::ifstream is("table", std::ios::binary);
     std::istreambuf_iterator<char> it(is);
@@ -47,15 +44,9 @@ int main(){
     KeyValueDeserializer<int, int> kvd{std::string("table")};
 
     auto pairs = kvd.Deserialize();
-    std::cout << "Time taken 1mb Deserialization: " << elapsed_seconds.count() << " seconds" << "\n";
 
     TreeMemTable<int, int> t{};
     for (auto& p: pairs) {
-        std::cout << p.key << " " << p.value << "\n";
+        t.Insert(p.key, p.value);
     }
-
-    t.Inorder();
-
-    int key_size = *(int*) &bytes[0];
-    int j = 0 + sizeof(int);
 }
