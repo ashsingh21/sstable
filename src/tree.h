@@ -1,6 +1,7 @@
 #include <iostream>
 #include <climits>
 #include <fstream>
+#include <vector>
 #include "memstorage.h"
 
 #ifndef AVL_TREE_H
@@ -214,23 +215,125 @@ namespace memstorage {
                 public:
                     Serializer(): os("table", std::ios::binary|std::ios::out|std::ios::app){};
                     ~Serializer(){
-                        os.close();                    
+                        os.close();             
                     }
                     void Archive(K key, V value) {
+                        if (!version_appended) {
+                            version_appended = true;
+                            os.write((char*) &version, sizeof(int));
+                        }
                         int key_size = sizeof(key);
                         int value_size = sizeof(value);
 
                         os.write((char*) &key_size, sizeof(int));
-                        os.write((char*) &value_size, sizeof(int));
-                        // write actual key and values
                         os.write((char*) &key, sizeof(K));
+                        os.write((char*) &value_size, sizeof(int));
                         os.write((char*) &value, sizeof(V));
                     }
 
                 private:
                     std::ofstream os;
+                    bool version_appended=false;
+                    int version=1;
             };
             Serializer sl;
+            
+    };
+
+    template<typename K, typename V>
+    class KeyValueDeserializer{
+        public:
+            struct Pair{
+                K key;
+                V value;
+            };
+            // std::out is the default mode for writing
+            // no need to specify std::out it is here just for clarity
+            KeyValueDeserializer(std::string filename): dsl(filename) {}
+
+            std::vector<Pair> Deserialize() {
+                dsl.Dearchive();
+                return dsl.deserialized;
+            }
+
+
+        private:
+            class Deserializer{
+                public:
+                    std::vector<Pair> deserialized;
+                    Deserializer(std::string filename): in(filename, std::ios::binary), it(in), buffer(it, std::istreambuf_iterator<char>()){};
+                    ~Deserializer(){
+                        in.close();             
+                    }
+
+                    void Dearchive() {
+                        read_version();
+
+                        while (cp < buffer.size()) {
+                            read_data();
+                        }
+                    }
+
+                private:
+                    std::ifstream in;
+                    std::istreambuf_iterator<char> it;
+                    std::vector<char> buffer;
+                    int cp = 0;
+                    int version = 0;
+                     // TODO add a data size field in serialzied file so that
+                    // size fixed size is known for the vector 
+
+                    void read_version() {
+                        version = read_int32();
+                    }
+
+                    // uint read_type() {
+                    //     // TODO: use an enum class here for various types
+                    //     switch(read_type()) {
+                    //         case 1: {
+                    //             return "INT";
+                    //         }
+                    //         case 2: {
+                    //             return "CHAR";
+                    //         }
+                    //         default: {
+                    //             return -1;
+                    //         }
+                    //     }
+                    // }
+                    K read_key() {
+                        int size = read_int32();
+                        K key = read_t<K>();
+                        return key;
+                    }
+
+                    V read_value() {
+                        int size = read_int32();
+                        V value = read_t<V>();
+                        return value;
+                    }
+                    
+                    template<typename T>
+                    T read_t(){
+                        T t = *(T*) (&buffer[cp]);
+                        cp += sizeof(T);
+                        return t;
+                    }
+
+                    void read_data() {
+                        K key = read_key();
+                        V value = read_value();
+                        std::cout << "key " << key << " " <<  " value "  << value << "\n";
+                        deserialized.push_back(Pair{key, value});
+                    }
+
+                    int read_int32() {
+                        int num = *(int*) (&buffer[cp]);
+                        cp += sizeof(int);
+                        return num;
+                    };
+            }; 
+            Deserializer dsl;    
     };
 
     template<class K, class V>
