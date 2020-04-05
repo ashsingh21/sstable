@@ -42,7 +42,6 @@ int main(){
     start = std::chrono::system_clock::now();
     std::ifstream is("table", std::ios::binary);
     std::istreambuf_iterator<char> it(is);
-    //is.read(&buffer[0], 100*4);
     
     std::vector<char> bytes (it, std::istreambuf_iterator<char>());
     KeyValueDeserializer<int, int> kvd{std::string("table")};
@@ -50,37 +49,6 @@ int main(){
     auto pairs = kvd.Deserialize();
     std::cout << "Time taken 1mb Deserialization: " << elapsed_seconds.count() << " seconds" << "\n";
 
-    // for(auto p: pairs) {
-    //     std::cout << "Pair: " << p.key << " " << p.value << "\n";
-    // }
-
-
     int key_size = *(int*) &bytes[0];
     int j = 0 + sizeof(int);
-
-
-    // for(int i = 0; i < bytes.size(); i += sizeof(int)) {
-    //     cout << *(int*) (&bytes[i]) << " ";
-    // }
-
-    
-    // std::cout << "--------------------------" << "\n";
-
-
-    // std::vector<char> data(
-    //     ,
-    //     std::istreambuf_iterator<char>(),
-    // );
-
-    // for (int i=0; i< buffer.size(); i+=sizeof(int)) {
-    //     data.push_back(*(int*) &buffer[i]);
-    // }
-
-    // for(auto i: data) {
-    //     cout << i << "\n";
-    // }
 }
-
-/*
-
-*/

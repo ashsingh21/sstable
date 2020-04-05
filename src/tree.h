@@ -203,7 +203,6 @@ namespace memstorage {
     class KeyValueSerializer{
         public:
             // std::out is the default mode for writing
-            // no need to specify std::out it is here just for clarity
             KeyValueSerializer(): sl() {}
 
             void Serialize(Data& data) {
@@ -248,7 +247,6 @@ namespace memstorage {
                 V value;
             };
             // std::out is the default mode for writing
-            // no need to specify std::out it is here just for clarity
             KeyValueDeserializer(std::string filename): dsl(filename) {}
 
             std::vector<Pair> Deserialize() {
@@ -287,8 +285,9 @@ namespace memstorage {
                         version = read_int32();
                     }
 
+                    // TODO: use an enum class here for various types
                     // uint read_type() {
-                    //     // TODO: use an enum class here for various types
+                    //     
                     //     switch(read_type()) {
                     //         case 1: {
                     //             return "INT";
@@ -301,6 +300,7 @@ namespace memstorage {
                     //         }
                     //     }
                     // }
+
                     K read_key() {
                         int size = read_int32();
                         K key = read_t<K>();
@@ -323,7 +323,6 @@ namespace memstorage {
                     void read_data() {
                         K key = read_key();
                         V value = read_value();
-                        std::cout << "key " << key << " " <<  " value "  << value << "\n";
                         deserialized.push_back(Pair{key, value});
                     }
 
