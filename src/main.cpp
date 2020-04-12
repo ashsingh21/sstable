@@ -62,13 +62,23 @@ int main(){
 
     std::ofstream test1("test1", std::ios::binary|std::ios::app);
     std::ofstream test2("test2", std::ios::binary|std::ios::app);
-    char a = 'A';
-    char b = 'B';
-    test1.write((char*) &a, sizeof(char));
-    test2.write((char*) &b, sizeof(char));
-    test1.close();
-    test2.close();
+    std::ofstream test3("test3", std::ios::binary|std::ios::app);
+    std::string a("ABCD");
+    std::string b("EFGH");
+    std::string c("IJKL");
 
-    SSTableMerger merger({"test1", "test2"});
+    for(auto& s: a){
+        test1.write((char*) &s, sizeof(char));
+    }
+    test1.close();
+    for(auto& s: b){
+        test2.write((char*) &s, sizeof(char));
+    }
+    test2.close();
+    for(auto& s: c){
+        test3.write((char*) &s, sizeof(char));
+    }
+
+    SSTableMerger<char> merger({"test1", "test2", "test3"});
     merger.merge();
 }
