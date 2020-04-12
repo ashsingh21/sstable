@@ -19,7 +19,6 @@ namespace memstorage {
                 _val = value;
                 _height = 1;
             };
-
             void SetKey(K key) {
                 _key = key;
             }
@@ -95,7 +94,7 @@ namespace memstorage {
             }
 
             void Inorder() {
-                //_Inorder(_root);
+                _Inorder(_root);
             }
 
             Node<K,V>* GetRoot(){
@@ -106,8 +105,6 @@ namespace memstorage {
             void Serialize(Archive& ar) {
                 _Serialize(_root, ar);
             }
-
-
         private:
             Node<K, V>* _root;
 
@@ -222,6 +219,7 @@ namespace memstorage {
         private:
             class Serializer{
                 public:
+                // TODO to make sure file is accessed only once when deserialzing.
                     Serializer(): os("table", std::ios::binary|std::ios::out|std::ios::app){};
                     ~Serializer(){
                         os.close();             
@@ -265,17 +263,28 @@ namespace memstorage {
                 return dsl.deserialized;
             }
 
-
         private:
             class Deserializer{
                 public:
                     std::vector<Pair> deserialized;
+                    /*
+                    The whole file is loaded here since
+                    since vector ctor has an overloaded method
+                    which takes an iterator as an input
+                    somewthing like vector(It begin, It end)
+                    where It begin is the beginning of the vector and
+                    It end is for the end of the vector
+                    here the end passed to the constructor of std::vector<char>  buffer
+                    is the end is std::istreambuf_iterator<char>() since by convention in c++
+                    end of an iterator is default ctor of any iterator
+                    */
                     Deserializer(std::string filename): in(filename, std::ios::binary), it(in), buffer(it, std::istreambuf_iterator<char>()){};
                     ~Deserializer(){
                         in.close();             
                     }
 
                     void Dearchive() {
+                        //std::cout << "File size: " << buffer.size() << "\n";
                         read_version();
 
                         while (cp < buffer.size()) {
@@ -362,7 +371,7 @@ namespace memstorage {
         return 1 + std::max(left, right);
     };
 
-    template<class K, class V>
+    template<typename K, typename V>
     bool is_balanced(Node<K,V>* root) {
         return _isbalanced(root) != -1;
     } 
