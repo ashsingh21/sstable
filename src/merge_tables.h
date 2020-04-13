@@ -45,7 +45,6 @@ class SSTableMerger{
                 iterators.push_back(std::istreambuf_iterator<char>(*file));
             }
             size_t length = iterators.size();
-
             // fill first values from iterator in min_heap
             // std::istreambuf_iterator has trivial copy contructor
             // all other iterators should also have trivial copy contructor
@@ -58,18 +57,14 @@ class SSTableMerger{
                     min_heap.push(std::make_pair(*it, it));
                 }
             }
-
             while(!min_heap.empty()) {
                 auto [min_key, min_it] = min_heap.top();
+                std::cout << min_key << " ";
                 min_heap.pop();
-                std::cout << *min_it << "\n";
                 output.write((char*) &min_key, sizeof(char));
                 min_it++;
                 if (min_it != iterator()) min_heap.push(std::make_pair(*min_it, min_it));   
             }
-
-
-    
         }
 
 
