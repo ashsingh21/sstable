@@ -10,14 +10,13 @@
 
 #ifndef MERGE_TABLE_H
 #define MERGE_TABLE_H
-using std::ifstream;
 
+using std::ifstream;
+using iterator = std::istreambuf_iterator<char>;
 // We are going to use an istreambuf_iterator since
 // iterators are lazily loaded so most probably 
 // the iterator might be using the exact page size when loading data
 // instead of loading the whole file at once.
-
-using iterator = std::istreambuf_iterator<char>;
 template<typename K>
 class SSTableMerger{
     public:
@@ -38,8 +37,9 @@ class SSTableMerger{
 
         // TODO make implementation generic for any type not just char
         void merge(){
+            using heap_pair = std::pair<K, iterator>;
             std::vector<iterator> iterators;
-            std::priority_queue<std::pair<K, iterator>, std::vector<std::pair<K, iterator>>, std::function<bool(std::pair<K, iterator>, std::pair<K, iterator>)>> min_heap(comparator_);
+            std::priority_queue<heap_pair, std::vector<heap_pair>, std::function<bool(heap_pair, heap_pair)>> min_heap(comparator_);
             
             for(auto file: files) {
                 iterators.push_back(std::istreambuf_iterator<char>(*file));
