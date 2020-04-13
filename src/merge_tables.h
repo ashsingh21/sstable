@@ -59,7 +59,6 @@ class SSTableMerger{
             }
             while(!min_heap.empty()) {
                 auto [min_key, min_it] = min_heap.top();
-                std::cout << min_key << " ";
                 min_heap.pop();
                 output.write((char*) &min_key, sizeof(char));
                 min_it++;
@@ -67,19 +66,10 @@ class SSTableMerger{
             }
         }
 
-
-
     private:
         std::vector<std::ifstream*> files;
         std::ofstream  output;
         std::vector<char> buffer1;
-
-        void merge_();
-
-        // advances the iterator to next key value
-        void advance_iterator() {
-
-        }
 
         static bool comparator_(
             std::pair<K, std::istreambuf_iterator<char>> p1,
@@ -87,9 +77,5 @@ class SSTableMerger{
         ){
             return p1.first > p2.first;
         }
-
-
 };
-
-
 #endif
