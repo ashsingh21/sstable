@@ -14,7 +14,7 @@
 using std::ifstream;
 using iterator = std::istreambuf_iterator<char>;
 // We are going to use an istreambuf_iterator since
-// iterators are lazily loaded so most probably 
+// streambuf_iterators are lazily loaded so most probably 
 // the iterator might be using the exact page size when loading data
 // instead of loading the whole file at once.
 template<typename K>
@@ -38,21 +38,21 @@ class SSTableMerger{
         // TODO make implementation generic for any type not just char
         void merge(){
             using heap_pair = std::pair<K, iterator>;
-            std::vector<iterator> iterators;
+            std::vector<iterator> streambuf_iterators;
             std::priority_queue<heap_pair, std::vector<heap_pair>, std::function<bool(heap_pair, heap_pair)>> min_heap(comparator_);
             
             for(auto file: files) {
-                iterators.push_back(std::istreambuf_iterator<char>(*file));
+                streambuf_iterators.push_back(std::istreambuf_iterator<char>(*file));
             }
-            size_t length = iterators.size();
+            size_t length = streambuf_iterators.size();
             // fill first values from iterator in min_heap
             // std::istreambuf_iterator has trivial copy contructor
-            // all other iterators should also have trivial copy contructor
+            // all other streambuf_iterators should also have trivial copy contructor
             // https://en.cppreference.com/w/cpp/iterator/istreambuf_iterator
             // TODO figure out why auto& is having an object instead of reference
             // since I have tried auto it, and both time it behaved the same time
             // should auto& it be deferenced as *(*it) if it is a reference for this particular case?
-            for(auto& it: iterators) {
+            for(auto& it: streambuf_iterators) {
                 if(it != iterator()){
                     min_heap.push(std::make_pair(*it, it));
                 }
