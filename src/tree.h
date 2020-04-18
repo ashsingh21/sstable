@@ -22,6 +22,10 @@ namespace memstorage {
                 _key =  key;
                 _val = value;
                 _height = 1;
+                auto now = system_clock::now();
+                auto now_ms = time_point_cast<milliseconds>(now);
+                auto since_epoch = now_ms.time_since_epoch();
+                timestamp_ms =  since_epoch.count();
             };
             void SetKey(K key) {
                 _key = key;
@@ -37,6 +41,9 @@ namespace memstorage {
             }
             int GetHeight(){
                 return _height;
+            }
+            long GetTimestamp(){
+                return timestamp_ms;
             }
             void SetHeight(int height){
                 _height = height;
@@ -75,7 +82,7 @@ namespace memstorage {
             Node* _left=nullptr;
             Node* _right=nullptr;
             int _height;
-            long timestamp;
+            long timestamp_ms;
     };
 
     // an avl tree implementation
@@ -170,7 +177,7 @@ namespace memstorage {
                     return;
                 }
                 _Inorder(node->GetLeftNode());
-                std::cout << "{ key: " node->GetKey() << " value: " << node->GetValue() << " timestamp: "  << node->GetTimestamp() << " }\n"; 
+                std::cout << "{ key: " << node->GetKey() << " value: " << node->GetValue() << " timestamp: "  << node->GetTimestamp() << " }\n"; 
                 _Inorder(node->GetRightNode());
             }
 
