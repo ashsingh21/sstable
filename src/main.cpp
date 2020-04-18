@@ -32,7 +32,6 @@ int main(){
     for (int i = 1; i < 1000; i++){
         tree.Insert(i,i);
     }
-    tree.Inorder();
 
     int bytestoread = 100 * 4;
 

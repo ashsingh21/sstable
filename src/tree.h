@@ -23,8 +23,9 @@ namespace memstorage {
                 _val = value;
                 _height = 1;
                 auto now = system_clock::now();
-                auto now_ms = time_point_cast<milliseconds>(now);
+                auto now_ms = time_point_cast<microseconds>(now);
                 auto since_epoch = now_ms.time_since_epoch();
+                std::cout << "timestamp created: " << since_epoch.count() << "\n";
                 timestamp_ms = since_epoch.count();
             };
             void SetKey(K key) {
@@ -151,7 +152,6 @@ namespace memstorage {
                     auto tmp = _RightRotation(node);
                     return tmp;
                 }
-
                 // right right imbalance
                 if (bf > 1 && key > node->GetRightNode()->GetKey()){
                     auto tmp = _LeftRotation(node);
