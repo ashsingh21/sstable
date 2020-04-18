@@ -25,7 +25,7 @@ namespace memstorage {
                 auto now = system_clock::now();
                 auto now_ms = time_point_cast<milliseconds>(now);
                 auto since_epoch = now_ms.time_since_epoch();
-                timestamp_ms =  since_epoch.count();
+                timestamp_ms = since_epoch.count();
             };
             void SetKey(K key) {
                 _key = key;
@@ -187,7 +187,7 @@ namespace memstorage {
                     return;
                 }
                 _Serialize(node->GetLeftNode(), ar);
-                ar.Archive(node->GetKey(), node->GetValue());
+                ar.Archive(node->GetKey(), node->GetValue(), node->GetTimestamp());
                 _Serialize(node->GetRightNode(), ar);
             }
 
@@ -238,18 +238,19 @@ namespace memstorage {
                     }
                     // probably find more efficient of serializing and 
                     // deserializing
-                    void Archive(K key, V value) {
+                    void Archive(K key, V value, long timestamp_ms) {
                         if (!version_appended) {
                             version_appended = true;
                             os.write((char*) &version, sizeof(int));
                         }
-                        int key_size = sizeof(key);
-                        int value_size = sizeof(value);
+                        int key_size = sizeof(K);
+                        int value_size = sizeof(V);
 
                         os.write((char*) &key_size, sizeof(int));
                         os.write((char*) &key, sizeof(K));
                         os.write((char*) &value_size, sizeof(int));
                         os.write((char*) &value, sizeof(V));
+                        os.write((char*) &timestamp_ms, sizeof(long));
                     }
 
                 private:
@@ -260,12 +261,15 @@ namespace memstorage {
             Serializer sl;  
     };
 
+    // prefer to use this Deserializer for testing
+    // since it loads the whole file in buffer
     template<typename K, typename V>
     class KeyValueDeserializer{
         public:
             struct Pair{
                 K key;
                 V value;
+                long timestamp_ms;
             };
             // std::out is the default mode for writing
             KeyValueDeserializer(std::string filename): dsl(filename) {}
@@ -344,6 +348,12 @@ namespace memstorage {
                         V value = read_t<V>();
                         return value;
                     }
+
+                    long read_timestamp_ms(){
+                        // we dont actually need to save timestamp
+                        long timestamp = read_t<long>();
+                        return timestamp;
+                    }
                     
                     template<typename T>
                     T read_t(){
@@ -355,8 +365,9 @@ namespace memstorage {
                     void read_data() {
                         K key = read_key();
                         V value = read_value();
+                        long timestamp = read_timestamp_ms();
                         //std::cout << key << " " << value << "\n";
-                        deserialized.push_back(Pair{key, value});
+                        deserialized.push_back(Pair{key, value, timestamp});
                     }
 
                     int read_int32() {
