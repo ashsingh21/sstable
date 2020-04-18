@@ -2,10 +2,14 @@
 #include <climits>
 #include <fstream>
 #include <vector>
+#include <chrono>
+
 #include "memstorage.h"
 
 #ifndef AVL_TREE_H
 #define AVL_TREE_H
+
+using namespace std::chrono;
 
 namespace memstorage {
     template<class K,class V>
@@ -71,6 +75,7 @@ namespace memstorage {
             Node* _left=nullptr;
             Node* _right=nullptr;
             int _height;
+            long timestamp;
     };
 
     // an avl tree implementation
@@ -165,7 +170,7 @@ namespace memstorage {
                     return;
                 }
                 _Inorder(node->GetLeftNode());
-                std::cout << node->GetKey() << " "; 
+                std::cout << "{ key: " node->GetKey() << " value: " << node->GetValue() << " timestamp: "  << node->GetTimestamp() << " }\n"; 
                 _Inorder(node->GetRightNode());
             }
 
