@@ -12,32 +12,29 @@
 using namespace std::chrono;
 
 namespace memstorage {
-    template<class K,class V>
-
     // TODO: add destructors to 'delete' and prevent memory leak 
     // or maybe just unique_ptr
     class Node {
         public:
-            Node(K key, V value) {
+            Node(std::string key, std::vector<char> value) {
                 _key =  key;
                 _val = value;
                 _height = 1;
                 auto now = system_clock::now();
                 auto now_ms = time_point_cast<microseconds>(now);
                 auto since_epoch = now_ms.time_since_epoch();
-                std::cout << "timestamp created: " << since_epoch.count() << "\n";
                 timestamp_ms = since_epoch.count();
             };
-            void SetKey(K key) {
+            void SetKey(std::string key) {
                 _key = key;
             }
-            void SetValue(V value) {
+            void SetValue(std::vector<char> value) {
                 _val = value;
             }
-            K GetKey(){
+            const std::string& GetKey(){
                 return _key;
             }
-            V GetValue() {
+            const std::vector<char>& GetValue() {
                 return _val;
             }
             int GetHeight(){
@@ -78,8 +75,8 @@ namespace memstorage {
             }
             
         private:
-            K _key;
-            V _val;
+            std::string _key;
+            std::vector<char> _val;
             Node* _left=nullptr;
             Node* _right=nullptr;
             int _height;
@@ -87,8 +84,7 @@ namespace memstorage {
     };
 
     // an avl tree implementation
-    template<class K,class V>
-    class TreeMemTable: public MemTable<K,V> {
+    class TreeMemTable: public MemTable {
         public:
             TreeMemTable(){
                 _root = nullptr;
@@ -96,21 +92,19 @@ namespace memstorage {
             ~TreeMemTable(){
                 Cleanup(_root);
             }
-            void Insert(K key, V val){
+            void Insert(std::string key, std::vector<char> val){
                  _root = _Insert(key, val, _root);   
             }
-            bool Delete(K key){
+            bool Delete(std::string& key) const {
                 return true;
             }
-            bool Contains(K key){
+            bool Contains(std::string& key) const { 
                 return true;
             }
-
             void Inorder() {
                 _Inorder(_root);
             }
-
-            Node<K,V>* GetRoot(){
+            Node* GetRoot(){
                 return _root;
             }
 
@@ -119,9 +113,9 @@ namespace memstorage {
                 _Serialize(_root, ar);
             }
         private:
-            Node<K, V>* _root;
+            Node* _root;
 
-            void Cleanup(Node<K,V>* node) {
+            void Cleanup(Node* node) {
                 if (node ==  nullptr) {
                     return;
                 }
@@ -130,7 +124,7 @@ namespace memstorage {
                 delete node;
             }
 
-            Node<K,V>* _Insert(K key, V val, Node<K,V>* node){
+            Node* _Insert(std::string key, std::vector<char> val, Node* node){
                 if (node == nullptr){
                     return new Node{key, val}; 
                 }
@@ -172,17 +166,21 @@ namespace memstorage {
                 return node;
             }
 
-            void _Inorder(Node<K,V>* node) const {
+            void _Inorder(Node* node) const {
                 if (node == nullptr) {
                     return;
                 }
                 _Inorder(node->GetLeftNode());
-                std::cout << "{ key: " << node->GetKey() << " value: " << node->GetValue() << " timestamp: "  << node->GetTimestamp() << " }\n"; 
+                std::string value_;
+                for(auto& byte: node->GetValue()) {
+                    value_.push_back(byte);
+                }
+                std::cout << "{ key: " << node->GetKey() << " value: " << value_ << " timestamp: "  << node->GetTimestamp() << " }\n"; 
                 _Inorder(node->GetRightNode());
             }
 
             template<class Archive>
-            void _Serialize(Node<K,V>* node, Archive& ar) {
+            void _Serialize(Node* node, Archive& ar) {
                 if (node == nullptr) {
                     return;
                 }
@@ -191,8 +189,8 @@ namespace memstorage {
                 _Serialize(node->GetRightNode(), ar);
             }
 
-            Node<K,V>* _LeftRotation(Node<K,V>* unbalanced_node){
-                Node<K,V>* temp = unbalanced_node->GetRightNode();
+            Node* _LeftRotation(Node* unbalanced_node){
+                Node* temp = unbalanced_node->GetRightNode();
                 unbalanced_node->SetRightNode(temp->GetLeftNode());
                 temp->SetLeftNode(unbalanced_node);
                 unbalanced_node->SetHeight(
@@ -204,8 +202,8 @@ namespace memstorage {
                 return temp;
             }
 
-            Node<K,V>* _RightRotation(Node<K,V>* unbalanced_node) {
-                Node<K,V>* temp = unbalanced_node->GetLeftNode();
+            Node* _RightRotation(Node* unbalanced_node) {
+                Node* temp = unbalanced_node->GetLeftNode();
                 unbalanced_node->SetLeftNode(temp->GetRightNode());
                 temp->SetRightNode(unbalanced_node);
                 unbalanced_node->SetHeight(
@@ -218,7 +216,7 @@ namespace memstorage {
             }
     };
 
-    template<class Data, class K, class V>
+    template<class Data>
     class KeyValueSerializer{
         public:
             // std::out is the default mode for writing
@@ -236,39 +234,42 @@ namespace memstorage {
                     ~Serializer(){
                         os.close();             
                     }
-                    // probably find more efficient of serializing and 
+                    // probably find more efficient way of serializing and 
                     // deserializing
-                    void Archive(K key, V value, long timestamp_ms) {
+                    void Archive(const std::string key, const std::vector<char> value, long timestamp_ms) {
                         if (!version_appended) {
                             version_appended = true;
                             os.write((char*) &version, sizeof(int));
                         }
-                        int key_size = sizeof(K);
-                        int value_size = sizeof(V);
+                        int key_size = key.size();
+                        int value_size = value.size();
 
                         os.write((char*) &key_size, sizeof(int));
-                        os.write((char*) &key, sizeof(K));
+                        for(auto string_char: key) {
+                            os.write((char*) &string_char, sizeof(char));
+                        }
                         os.write((char*) &value_size, sizeof(int));
-                        os.write((char*) &value, sizeof(V));
+                        for(auto byte: value){
+                            os.write((char*) &byte, sizeof(char));
+                        }
                         os.write((char*) &timestamp_ms, sizeof(long));
                     }
 
                 private:
                     std::ofstream os;
-                    bool version_appended=false;
-                    int version=1;
+                    bool version_appended = false;
+                    int version = 1;
             };
             Serializer sl;  
     };
 
     // prefer to use this Deserializer for testing
     // since it loads the whole file in buffer
-    template<typename K, typename V>
     class KeyValueDeserializer{
         public:
             struct Pair{
-                K key;
-                V value;
+                std::string key;
+                std::vector<char> value;
                 long timestamp_ms;
             };
             // std::out is the default mode for writing
@@ -337,15 +338,23 @@ namespace memstorage {
                     //     }
                     // }
 
-                    K read_key() {
+                    std::string read_key() {
                         int size = read_int32();
-                        K key = read_t<K>();
+                        int curr = cp;
+                        std::string key;
+                        for(; cp < size+curr; cp++) {
+                            key.push_back(buffer[cp]);
+                        }
                         return key;
                     }
 
-                    V read_value() {
+                    std::vector<char> read_value() {
                         int size = read_int32();
-                        V value = read_t<V>();
+                        int curr = cp;
+                        std::vector<char> value;
+                        for(; cp < size+curr; cp++){
+                            value.push_back(buffer[cp]);
+                        }
                         return value;
                     }
 
@@ -363,8 +372,8 @@ namespace memstorage {
                     }
 
                     void read_data() {
-                        K key = read_key();
-                        V value = read_value();
+                        std::string key = read_key();
+                        std::vector<char> value = read_value();
                         long timestamp = read_timestamp_ms();
                         //std::cout << key << " " << value << "\n";
                         deserialized.push_back(Pair{key, value, timestamp});
@@ -379,44 +388,42 @@ namespace memstorage {
             Deserializer dsl;    
     };
 
-    template<class K, class V>
-    int _isbalanced(Node<K,V>* root) {
-        if (root == nullptr) {
-            return 0;
-        }
 
-        int left = _isbalanced(root->GetLeftNode());
-        int right = _isbalanced(root->GetRightNode());
+    //// figure out how would you implement for strings
+    // int _isbalanced(Node* root) {
+    //     if (root == nullptr) {
+    //         return 0;
+    //     }
 
-        if (left == -1 || right == -1 || std::abs(left-right) > 1) {
-            return -1;
-        }
-        return 1 + std::max(left, right);
-    };
+    //     int left = _isbalanced(root->GetLeftNode());
+    //     int right = _isbalanced(root->GetRightNode());
 
-    template<typename K, typename V>
-    bool is_balanced(Node<K,V>* root) {
-        return _isbalanced(root) != -1;
-    } 
+    //     if (left == -1 || right == -1 || std::abs(left-right) > 1) {
+    //         return -1;
+    //     }
+    //     return 1 + std::max(left, right);
+    // };
 
-    template<class K, class V>
-    bool _isbst(Node<K,V>* root, long min, long max) {
-        if (root == nullptr) {
-            return true;
-        }
+    // bool is_balanced(Node* root) {
+    //     return _isbalanced(root) != -1;
+    // } 
 
-        if (root->GetKey() <= min || root->GetKey() >= max) {
-            return false;
-        }
+    // bool _isbst(Node* root, long min, long max) {
+    //     if (root == nullptr) {
+    //         return true;
+    //     }
 
-        return (_isbst(root->GetLeftNode(), min, root->GetKey()) && 
-            _isbst(root->GetRightNode(), root->GetKey(), max));
-    }
+    //     if (root->GetKey() <= min || root->GetKey() >= max) {
+    //         return false;
+    //     }
 
-    template<class K, class V>
-    bool is_bst(Node<K,V>* root) {
-        return _isbst(root, LONG_MIN ,LONG_MAX);
+    //     return (_isbst(root->GetLeftNode(), min, root->GetKey()) && 
+    //         _isbst(root->GetRightNode(), root->GetKey(), max));
+    // }
 
-    };
+    // bool is_bst(Node* root) {
+    //     return _isbst(root,  ,LONG_MAX);
+
+    // };
 }
 #endif
