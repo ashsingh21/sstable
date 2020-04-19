@@ -42,7 +42,7 @@ class SSTableMerger{
         void merge(){
             using heap_p = std::pair<Record, iterator>;
             std::vector<iterator> streambuf_iterators;
-            std::priority_queue<iterator, std::vector<heap_p>, std::function<bool(heap_p, heap_p)>> min_heap(comparator_);
+            std::priority_queue<heap_p, std::vector<heap_p>, std::function<bool(heap_p, heap_p)>> min_heap(comparator_);
             
             for(auto file: files) {
                 streambuf_iterators.push_back(std::istreambuf_iterator<char>(*file));
@@ -61,11 +61,27 @@ class SSTableMerger{
                 }
             }
             while(!min_heap.empty()) {
-                auto [min_key, min_it] = min_heap.top();
+                auto [min_record, min_it] = min_heap.top();
                 min_heap.pop();
-                output.write((char*) &min_key, sizeof(char));
-                ++min_it;
-                if (min_it != iterator()) min_heap.push(std::make_pair(*min_it, min_it));   
+
+                int key_size = min_record.key.size();
+                output.write((char*) &key_size, sizeof(int));
+
+                for(auto key_char: min_record.key) {
+                    output.write((char*) &key_char, sizeof(char));
+                }
+
+                int value_size = min_record.value.size();
+                output.write((char*) &value_size, sizeof(int));
+
+                for(auto byte: min_record.value) {
+                    output.write((char*) &byte, sizeof(char));
+                }
+
+                output.write((char*) &min_record.timestamp, sizeof(long));
+
+                advance_to_next_record(min_it);
+                if (min_it != iterator()) min_heap.push(std::make_pair(get_record(min_it), min_it));   
             }
         }
 
@@ -102,6 +118,19 @@ class SSTableMerger{
             return record;
         };
 
+        void advance_to_next_record(iterator& it) {
+            int key_size = read_int32(it);
+
+            for(int i = 0; i < key_size; i++){
+                ++it;
+            }
+            int value_size = read_int32(it);
+            for(int i = 0; i < value_size; i++){
+                ++it;
+            }
+            read_long(it);
+        };
+
         long read_long(iterator& it) {
             // TODO find the size of long
             char buffer[100];
@@ -110,7 +139,7 @@ class SSTableMerger{
                 ++it;
             }
             return *(long*) (&buffer[0]);
-        }
+        };
 
         int read_int32(iterator& it) {
             char buffer[4];
@@ -121,10 +150,11 @@ class SSTableMerger{
                 ++it;
             }
             return *(int*)(&buffer[0]);
-        }
-        bool comparator_(Record r1, Record r2) {
+        };
 
-        }
+        static bool comparator_(std::pair<Record, iterator> r1, std::pair<Record, iterator> r2) {
+            return 0;
+        };
 };
 
 
