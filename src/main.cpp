@@ -28,14 +28,14 @@ int main(){
     TreeMemTable tree{};
     std::vector<char> test_value{'A', 'B'};
     std::string key("Hello");
-        std::vector<char> test_value1{'C', 'D'};
+    std::vector<char> test_value1{'C', 'D'};
     std::string key1("jello");
-            std::vector<char> test_value2{'E', 'F'};
+    std::vector<char> test_value2{'E', 'F'};
     std::string key2("Kello");
     auto start = std::chrono::system_clock::now();
-        tree.Insert(key,test_value);
-        tree.Insert(key1,test_value1);
-        tree.Insert(key2,test_value2);
+    tree.Insert(key,test_value);
+    tree.Insert(key1,test_value1);
+    tree.Insert(key2,test_value2);
 
     int bytestoread = 100 * 4;
 
