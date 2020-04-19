@@ -25,18 +25,22 @@ inline char get_random() {
 
 
 int main(){
-    Node root{2,2};
-
-    TreeMemTable<int, int> tree{};
+    TreeMemTable tree{};
+    std::vector<char> test_value{'A', 'B'};
+    std::string key("Hello");
+        std::vector<char> test_value1{'C', 'D'};
+    std::string key1("jello");
+            std::vector<char> test_value2{'E', 'F'};
+    std::string key2("Kello");
     auto start = std::chrono::system_clock::now();
-    for (int i = 1; i < 1000; i++){
-        tree.Insert(i,i);
-    }
+        tree.Insert(key,test_value);
+        tree.Insert(key1,test_value1);
+        tree.Insert(key2,test_value2);
 
     int bytestoread = 100 * 4;
 
     {
-        memstorage::KeyValueSerializer<TreeMemTable<int,int>, int,int> kv{};
+        memstorage::KeyValueSerializer<TreeMemTable> kv{};
         kv.Serialize(tree);
     }
     auto end = std::chrono::system_clock::now();
@@ -49,11 +53,11 @@ int main(){
     std::istreambuf_iterator<char> it(is);
     
     std::vector<char> bytes (it, std::istreambuf_iterator<char>());
-    KeyValueDeserializer<int, int> kvd{std::string("table")};
+    KeyValueDeserializer kvd{std::string("table")};
 
     auto pairs = kvd.Deserialize();
 
-    TreeMemTable<int, int> t{};
+    TreeMemTable t{};
     for (auto& p: pairs) {
         t.Insert(p.key, p.value);
     }

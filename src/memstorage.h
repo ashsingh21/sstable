@@ -1,12 +1,11 @@
 #ifndef MEM_STORAGE_H
 #define MEM_STORAGE_H
 
-template<class K, class V>
 class MemTable {
     public:
-        virtual void Insert(K key, V val) = 0;
-        virtual bool Delete(K key) = 0;
-        virtual bool Contains(K key) = 0;
+        virtual void Insert(std::string key, std::vector<char> val) = 0;
+        virtual bool Delete(std::string& key) const = 0;
+        virtual bool Contains(std::string& key) const = 0;
 };
 
 #endif
