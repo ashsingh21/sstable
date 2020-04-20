@@ -220,7 +220,7 @@ namespace memstorage {
     class KeyValueSerializer{
         public:
             // std::out is the default mode for writing
-            KeyValueSerializer(): sl() {}
+            KeyValueSerializer(std::string filename): sl(filename) {}
 
             void Serialize(Data& data) {
                 data.Serialize(sl);
@@ -230,7 +230,7 @@ namespace memstorage {
             class Serializer{
                 public:
                 // TODO to make sure file is accessed only once when deserialzing.
-                    Serializer(): os("table", std::ios::binary|std::ios::out|std::ios::app){};
+                    Serializer(std::string filename): os(filename, std::ios::binary|std::ios::out|std::ios::app){};
                     ~Serializer(){
                         os.close();             
                     }
@@ -301,9 +301,7 @@ namespace memstorage {
                     }
 
                     void Dearchive() {
-                        //std::cout << "File size: " << buffer.size() << "\n";
                         read_version();
-
                         while (cp < buffer.size()) {
                             read_data();
                         }
@@ -314,12 +312,14 @@ namespace memstorage {
                     std::istreambuf_iterator<char> it;
                     std::vector<char> buffer;
                     int cp = 0;
-                    int version = 0;
+                    int version = 1;
                      // TODO add a data size field in serialzied file so that
                     // size fixed size is known for the vector 
 
-                    void read_version() {
+                    int read_version() {
                         version = read_int32();
+                        std::cout << "version: " << version << "\n";
+                        return version;
                     }
 
                     // TODO: use an enum class here for various types
