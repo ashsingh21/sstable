@@ -19,7 +19,11 @@ using iterator = std::istreambuf_iterator<char>;
 // streambuf_iterators are lazily loaded so most probably 
 // the iterator might be using the exact page size when loading data
 // instead of loading the whole file at once.
-
+struct Record{
+    std::string key;
+    std::vector<char> value;
+    long timestamp;
+};
 class SSTableMerger{
     public:
         SSTableMerger(std::initializer_list<std::string> filenames): output("merged_table", std::ios::binary|std::ios::app){
@@ -28,6 +32,8 @@ class SSTableMerger{
                 std::ifstream* file = new std::ifstream(filename, std::ios::binary);
                 files.push_back(file);
             }
+            int version = 1;
+            output.write((char*) &version, sizeof(int));
         }
 
         ~SSTableMerger(){
@@ -47,6 +53,7 @@ class SSTableMerger{
             for(auto file: files) {
                 streambuf_iterators.push_back(std::istreambuf_iterator<char>(*file));
             }
+
             size_t length = streambuf_iterators.size();
             // fill first values from iterator in min_heap
             // std::istreambuf_iterator has trivial copy contructor
@@ -56,31 +63,20 @@ class SSTableMerger{
             // since I have tried auto it, and both time it behaved the same time
             // should auto& it be deferenced as *(*it) if it is a reference for this particular case?
             for(auto& it: streambuf_iterators) {
+                // skip version
+                for(int i = 0; i < sizeof(int); i++){
+                    ++it;
+                }
+
                 if(it != iterator()){
                     min_heap.push(std::make_pair(get_record(it), it));
                 }
             }
+
             while(!min_heap.empty()) {
                 auto [min_record, min_it] = min_heap.top();
                 min_heap.pop();
-
-                int key_size = min_record.key.size();
-                output.write((char*) &key_size, sizeof(int));
-
-                for(auto key_char: min_record.key) {
-                    output.write((char*) &key_char, sizeof(char));
-                }
-
-                int value_size = min_record.value.size();
-                output.write((char*) &value_size, sizeof(int));
-
-                for(auto byte: min_record.value) {
-                    output.write((char*) &byte, sizeof(char));
-                }
-
-                output.write((char*) &min_record.timestamp, sizeof(long));
-
-                advance_to_next_record(min_it);
+                write_data(min_record);
                 if (min_it != iterator()) min_heap.push(std::make_pair(get_record(min_it), min_it));   
             }
         }
@@ -89,17 +85,30 @@ class SSTableMerger{
         std::vector<std::ifstream*> files;
         std::ofstream output;
         std::vector<char> buffer1;
-        struct Record{
-            std::string key;
-            std::vector<char> value;
-            long timestamp;
-        };
+
+        void write_data(Record record){
+            //std::cout << "Key: " << record.key << " value size: " << record.value.size() << " timestamp: " << record.timestamp << "\n";
+            int key_size = record.key.size();
+            output.write((char*) &key_size, sizeof(int));
+
+            for(auto key_char: record.key) {
+                output.write((char*) &key_char, sizeof(char));
+            }
+
+            int value_size = record.value.size();
+            output.write((char*) &value_size, sizeof(int));
+
+            for(auto byte: record.value) {
+                output.write((char*) &byte, sizeof(char));
+            }
+
+            output.write((char*) &record.timestamp, sizeof(long));
+        }
 
         Record get_record(iterator it) {
             Record record;
             int key_size = read_int32(it);
             std::string key;
-
             for(int i = 0; i < key_size; i++){
                 key.push_back(*it);
                 ++it;
@@ -116,19 +125,6 @@ class SSTableMerger{
             record.timestamp = timestamp;
 
             return record;
-        };
-
-        void advance_to_next_record(iterator& it) {
-            int key_size = read_int32(it);
-
-            for(int i = 0; i < key_size; i++){
-                ++it;
-            }
-            int value_size = read_int32(it);
-            for(int i = 0; i < value_size; i++){
-                ++it;
-            }
-            read_long(it);
         };
 
         long read_long(iterator& it) {
@@ -153,7 +149,11 @@ class SSTableMerger{
         };
 
         static bool comparator_(std::pair<Record, iterator> r1, std::pair<Record, iterator> r2) {
-            return 0;
+            auto [record1, it1] = r1;
+            auto [record2, it2] = r2;
+
+            if (record1.key ==  record2.key) return record1.timestamp > record2.timestamp;
+            return record1.key > record2.key;
         };
 };
 
