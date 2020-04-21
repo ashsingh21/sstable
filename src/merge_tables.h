@@ -42,7 +42,6 @@ class SSTableMerger{
             }
             output.close(); 
         }
-
         // TODO make implementation generic for any type not just char
         // how would you lazily deserialzie comlpex records like string key, value bytes and timestamp
         void merge(){
@@ -72,13 +71,19 @@ class SSTableMerger{
                     min_heap.push(std::make_pair(get_record(it), it));
                 }
             }
-
-            while(!min_heap.empty()) {
-                auto [min_record, min_it] = min_heap.top();
-                min_heap.pop();
-                write_data(min_record);
-                if (min_it != iterator()) min_heap.push(std::make_pair(get_record(min_it), min_it));   
+            {
+                Record prev;
+                while(!min_heap.empty()) {
+                    auto [min_record, min_it] = min_heap.top();
+                    min_heap.pop();
+                    if(prev.key != min_record.key){
+                        write_data(min_record);
+                    }
+                    prev = min_record;
+                    if (min_it != iterator()) min_heap.push(std::make_pair(get_record(min_it), min_it));   
+                }
             }
+
         }
 
     private:
