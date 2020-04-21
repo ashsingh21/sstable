@@ -19,6 +19,13 @@ using iterator = std::istreambuf_iterator<char>;
 // streambuf_iterators are lazily loaded so most probably 
 // the iterator might be using the exact page size when loading data
 // instead of loading the whole file at once.
+
+/*
+Serialized data format:
+---------------------------------------------------------------------------------------------
+| version: 4bytes | key_size: 4bytes | key | value_size: 4bytes | value | timestamp: 8bytes |
+---------------------------------------------------------------------------------------------
+*/
 struct Record{
     std::string key;
     std::vector<char> value;
